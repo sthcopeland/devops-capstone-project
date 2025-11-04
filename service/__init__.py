@@ -13,6 +13,20 @@ from service.common import log_handlers
 app = Flask(__name__)
 app.config.from_object(config)
 
+from flask_talisman import Talisman
+from flask_cors import CORS
+csp = {"default-src": "'self'"}
+Talisman(app, content_security_policy=csp, force_https=False)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+from flask_talisman import Talisman
+from flask_cors import CORS
+
+csp = {"default-src": "'self'"}
+Talisman(app, content_security_policy=csp, force_https=False)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
 # Import the routes After the Flask app is created
 # pylint: disable=wrong-import-position, cyclic-import, wrong-import-order
 from service import routes, models  # noqa: F401 E402
@@ -35,3 +49,10 @@ except Exception as error:  # pylint: disable=broad-except
     sys.exit(4)
 
 app.logger.info("Service initialized!")
+
+
+@app.after_request
+def _add_hsts_header(resp):
+    if "Strict-Transport-Security" not in resp.headers:
+        resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return resp

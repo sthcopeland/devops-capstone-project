@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = service
+[report]
+show_missing = True
+fail_under = 95

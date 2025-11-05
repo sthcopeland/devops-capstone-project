@@ -1,4 +1,5 @@
 name: CI
+
 on:
   push:
     branches: ["**"]
@@ -20,7 +21,7 @@ jobs:
           python -m pip install -U pip
           pip install -r requirements.txt
 
-      - name: Ensure nose shim (sitecustomize.py)
+      - name: Shim for nose on py3.10
         run: |
           python - <<'PY'
 import pathlib, collections, collections.abc
@@ -35,7 +36,7 @@ PY
 
       - name: Run tests (SQLite)
         env:
-          DATABASE_URI: "sqlite:///./db/test.db"
+          DATABASE_URI: "sqlite:///./db/test_ci.db"
         run: |
-          mkdir -p db && rm -f db/test.db
+          mkdir -p db && rm -f db/test_ci.db
           nosetests -sv --with-coverage --cover-package=service

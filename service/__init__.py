@@ -35,3 +35,21 @@ except Exception as error:  # pylint: disable=broad-except
     sys.exit(4)
 
 app.logger.info("Service initialized!")
+
+# --- Security headers for 3j (safe no-op if import fails) ---
+try:
+    from flask_talisman import Talisman  # type: ignore
+    # assumes 'app' already exists in this module
+    _csp = {"default-src": "'self'"}
+    Talisman(
+        app,
+        content_security_policy=_csp,
+        frame_options="DENY",
+        force_https=False,            # keep False for local HTTP
+        referrer_policy="no-referrer",
+        permissions_policy={"geolocation": "()","camera": "()","microphone": "()"},
+    )
+except Exception as _e:
+    # keep tests running even if Talisman not installed/initialized in CI
+    pass
+# --- end 3j block ---

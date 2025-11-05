@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install deps
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+      - name: Shim for nose on py3.10
+        run: |
+          python - <<'PY'
+import collections, collections.abc
+for n in ("Callable","Mapping","MutableMapping","Sequence"):
+    if not hasattr(collections, n):
+        setattr(collections, n, getattr(collections.abc, n))
+PY
+      - name: Run tests (SQLite)
+        env:
+          DATABASE_URI: "sqlite:///./db/test.db"
+        run: |
+          mkdir -p db && rm -f db/test.db
+          nosetests -sv --with-coverage --cover-package=service

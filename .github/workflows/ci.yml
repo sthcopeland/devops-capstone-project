@@ -11,21 +11,26 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      # force SQLite everywhere
-      DATABASE_URL: "sqlite:///./db/test_ci.db"
-      SQLALCHEMY_DATABASE_URI: "sqlite:///./db/test_ci.db"
+      DB_PATH: ${{ github.workspace }}/db/test_ci.db
+      # Force SQLite everywhere the app might read
+      DATABASE_URL: sqlite:///${{ github.workspace }}/db/test_ci.db
+      DATABASE_URI: sqlite:///${{ github.workspace }}/db/test_ci.db
+      SQLALCHEMY_DATABASE_URI: sqlite:///${{ github.workspace }}/db/test_ci.db
+      # Blank any Postgres-like env that could override config
       POSTGRES_HOST: ""
       POSTGRES_USER: ""
       POSTGRES_PASSWORD: ""
       POSTGRES_PORT: ""
       PGHOST: ""
       PGUSER: ""
-      # make sure Python can auto-import our shim
+      PGPASSWORD: ""
+      PGPORT: ""
+      FLASK_ENV: development
+      # ensure sitecustomize.py is auto-loaded
       PYTHONPATH: ${{ github.workspace }}
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -38,19 +43,17 @@ jobs:
       - name: Shim for nose on py3.10
         run: |
           python - <<'PY'
-from pathlib import Path
-import collections, collections.abc
-p = Path("sitecustomize.py")
-p.write_text(
-    "import collections, collections.abc\n"
-    "for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
-    "    if not hasattr(collections, n):\n"
-    "        setattr(collections, n, getattr(collections.abc, n))\n"
-)
-print("shim written at", p.resolve())
-PY
+          import pathlib, collections, collections.abc
+          p = pathlib.Path("sitecustomize.py")
+          p.write_text(
+              "import collections, collections.abc\n"
+              "for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
+              "    if not hasattr(collections, n):\n"
+              "        setattr(collections, n, getattr(collections.abc, n))\n"
+          )
+          PY
 
       - name: Run tests (SQLite)
         run: |
-          mkdir -p db && rm -f db/test_ci.db
+          mkdir -p db && rm -f "$DB_PATH"
           nosetests -sv --with-coverage --cover-package=service

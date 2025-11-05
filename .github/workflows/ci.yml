@@ -12,11 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DB_PATH: ${{ github.workspace }}/db/test_ci.db
-      # Force SQLite everywhere the app might read
       DATABASE_URL: sqlite:///${{ github.workspace }}/db/test_ci.db
       DATABASE_URI: sqlite:///${{ github.workspace }}/db/test_ci.db
       SQLALCHEMY_DATABASE_URI: sqlite:///${{ github.workspace }}/db/test_ci.db
-      # Blank any Postgres-like env that could override config
       POSTGRES_HOST: ""
       POSTGRES_USER: ""
       POSTGRES_PASSWORD: ""
@@ -26,7 +24,6 @@ jobs:
       PGPASSWORD: ""
       PGPORT: ""
       FLASK_ENV: development
-      # ensure sitecustomize.py is auto-loaded
       PYTHONPATH: ${{ github.workspace }}
 
     steps:
@@ -44,8 +41,7 @@ jobs:
         run: |
           python - <<'PY'
           import pathlib, collections, collections.abc
-          p = pathlib.Path("sitecustomize.py")
-          p.write_text(
+          pathlib.Path("sitecustomize.py").write_text(
               "import collections, collections.abc\n"
               "for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
               "    if not hasattr(collections, n):\n"

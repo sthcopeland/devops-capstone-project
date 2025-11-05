@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -24,15 +25,15 @@ jobs:
       - name: Shim for nose on py3.10
         run: |
           python - <<'PY'
-import pathlib, collections, collections.abc
-p = pathlib.Path("sitecustomize.py")
-p.write_text(
-"import collections, collections.abc\n"
-"for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
-"    if not hasattr(collections, n):\n"
-"        setattr(collections, n, getattr(collections.abc, n))\n"
-)
-PY
+          import pathlib, collections, collections.abc
+          p = pathlib.Path("sitecustomize.py")
+          p.write_text(
+              "import collections, collections.abc\n"
+              "for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
+              "    if not hasattr(collections, n):\n"
+              "        setattr(collections, n, getattr(collections.abc, n))\n"
+          )
+          PY
 
       - name: Run tests (SQLite)
         env:
@@ -40,7 +41,7 @@ PY
           DATABASE_URL: "sqlite:///./db/test_ci.db"
           DATABASE_URI: "sqlite:///./db/test_ci.db"
           SQLALCHEMY_DATABASE_URI: "sqlite:///./db/test_ci.db"
-          # Nuke any Postgres-ish env that could override config
+          # Blank any accidental PG env
           POSTGRES_HOST: ""
           POSTGRES_USER: ""
           POSTGRES_PASSWORD: ""

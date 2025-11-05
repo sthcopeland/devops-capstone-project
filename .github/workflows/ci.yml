@@ -10,6 +10,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # force SQLite everywhere
+      DATABASE_URL: "sqlite:///./db/test_ci.db"
+      SQLALCHEMY_DATABASE_URI: "sqlite:///./db/test_ci.db"
+      POSTGRES_HOST: ""
+      POSTGRES_USER: ""
+      POSTGRES_PASSWORD: ""
+      POSTGRES_PORT: ""
+      PGHOST: ""
+      PGUSER: ""
+      # make sure Python can auto-import our shim
+      PYTHONPATH: ${{ github.workspace }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,31 +38,19 @@ jobs:
       - name: Shim for nose on py3.10
         run: |
           python - <<'PY'
-          import pathlib, collections, collections.abc
-          p = pathlib.Path("sitecustomize.py")
-          p.write_text(
-              "import collections, collections.abc\n"
-              "for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
-              "    if not hasattr(collections, n):\n"
-              "        setattr(collections, n, getattr(collections.abc, n))\n"
-          )
-          PY
+from pathlib import Path
+import collections, collections.abc
+p = Path("sitecustomize.py")
+p.write_text(
+    "import collections, collections.abc\n"
+    "for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
+    "    if not hasattr(collections, n):\n"
+    "        setattr(collections, n, getattr(collections.abc, n))\n"
+)
+print("shim written at", p.resolve())
+PY
 
       - name: Run tests (SQLite)
-        env:
-          # Force SQLite everywhere the app might read
-          DATABASE_URL: "sqlite:///./db/test_ci.db"
-          DATABASE_URI: "sqlite:///./db/test_ci.db"
-          SQLALCHEMY_DATABASE_URI: "sqlite:///./db/test_ci.db"
-          # Blank any accidental PG env
-          POSTGRES_HOST: ""
-          POSTGRES_USER: ""
-          POSTGRES_PASSWORD: ""
-          POSTGRES_PORT: ""
-          PGHOST: ""
-          PGUSER: ""
-          PGPASSWORD: ""
-          PGPORT: ""
         run: |
           mkdir -p db && rm -f db/test_ci.db
           nosetests -sv --with-coverage --cover-package=service

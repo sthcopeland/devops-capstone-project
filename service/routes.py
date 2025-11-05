@@ -4,7 +4,7 @@ Account Service
 This microservice handles the lifecycle of Accounts
 """
 # pylint: disable=unused-import
-from flask import jsonify, request, make_response, abort, url_for   # noqa; F401
+from flask import jsonify, request, make_response, abort, url_for  # noqa; F401
 from service.models import Account
 from service.common import status  # HTTP Status Codes
 from . import app  # Import Flask application
@@ -57,6 +57,7 @@ def create_accounts():
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
 
+
 ######################################################################
 # LIST ALL ACCOUNTS
 ######################################################################
@@ -100,3 +101,48 @@ def check_content_type(media_type):
         status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
         f"Content-Type must be {media_type}",
     )
+
+
+# --- appended CRUD routes ---
+from flask import jsonify, request, abort
+from service.models import Account, db
+
+
+@app.get("/accounts/<int:account_id>")
+def read_account(account_id: int):
+    account = Account.query.get(account_id)
+    if not account:
+        abort(404, description=f"Account {account_id} not found")
+    return jsonify(account.serialize()), 200
+
+
+@app.get("/accounts")
+def list_accounts():
+    accounts = Account.query.all()
+    return jsonify([a.serialize() for a in accounts]), 200
+
+
+@app.put("/accounts/<int:account_id>")
+def update_account(account_id: int):
+    account = Account.query.get(account_id)
+    if not account:
+        abort(404, description=f"Account {account_id} not found")
+    data = request.get_json() or {}
+    for f in ("name", "email", "address", "phone_number"):
+        if f in data:
+            setattr(account, f, data[f])
+    db.session.commit()
+    return jsonify(account.serialize()), 200
+
+
+@app.delete("/accounts/<int:account_id>")
+def delete_account(account_id: int):
+    account = Account.query.get(account_id)
+    if not account:
+        abort(404, description=f"Account {account_id} not found")
+    db.session.delete(account)
+    db.session.commit()
+    return ("", 204)
+
+
+# --- end appended CRUD routes ---

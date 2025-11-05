@@ -1,3 +1,5 @@
+[![CI](https://github.com/STHCOPELAND/devops-capstone-project/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/STHCOPELAND/devops-capstone-project/actions/workflows/tests.yml)
+
 # DevOps Capstone Template
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)

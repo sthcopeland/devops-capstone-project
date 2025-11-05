@@ -29,14 +29,20 @@ p = pathlib.Path("sitecustomize.py")
 p.write_text(
 "import collections, collections.abc\n"
 "for n in ('Callable','Mapping','MutableMapping','Sequence'):\n"
-"    if not hasattr(collections, n):\n"
-"        setattr(collections, n, getattr(collections.abc, n))\n"
+"  if not hasattr(collections, n):\n"
+"    setattr(collections, n, getattr(collections.abc, n))\n"
 )
 PY
 
       - name: Run tests (SQLite)
         env:
+          # force SQLite and block any accidental Postgres settings
           DATABASE_URI: "sqlite:///./db/test_ci.db"
+          POSTGRES_HOST: ""
+          POSTGRES_USER: ""
+          POSTGRES_PASSWORD: ""
+          POSTGRES_PORT: ""
+          DATABASE_URL: ""
         run: |
           mkdir -p db && rm -f db/test_ci.db
           nosetests -sv --with-coverage --cover-package=service
